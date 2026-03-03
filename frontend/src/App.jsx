@@ -1,61 +1,67 @@
 import { Routes, Route, Navigate } from "react-router-dom"
-import LoginPage from "./pages/LoginPage"
-import DashboardPage from "./pages/DashboardPage"
-import TransactionPage from "./pages/TransactionPage"
-import LogsPage from "./pages/LogsPage"
-import AnalyticsPage from "./pages/AnalyticsPage"
+import { lazy, Suspense } from "react"
+
 import ProtectedRoute from "./components/common/ProtectedRoute"
+import AdminRoute from "./components/common/AdminRoute"
 import Navbar from "./components/layout/Navbar"
+import PageLoader from "./components/common/PageLoader"
+
 import { AuthProvider } from "./context/AuthContext"
+import { TransactionProvider } from "./context/TransactionContext"
+
+const LoginPage = lazy(() => import("./pages/LoginPage"))
+const RegisterPage = lazy(() => import("./pages/RegisterPage"))
+const DashboardPage = lazy(() => import("./pages/DashboardPage"))
+const TransactionPage = lazy(() => import("./pages/TransactionPage"))
+const AdminPage = lazy(() => import("./pages/AdminPage"))
 
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
+      <TransactionProvider>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Navbar />
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-        <Route
-          path="/transaction"
-          element={
-            <ProtectedRoute>
-              <Navbar />
-              <TransactionPage />
-            </ProtectedRoute>
-          }
-        />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
 
-        <Route
-          path="/logs"
-          element={
-            <ProtectedRoute>
-              <Navbar />
-              <LogsPage />
-            </ProtectedRoute>
-          }
-        />
+            <Route
+              path="/transaction"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <TransactionPage />
+                </ProtectedRoute>
+              }
+            />
 
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute>
-              <Navbar />
-              <AnalyticsPage />
-            </ProtectedRoute>
-          }
-        />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminRoute>
+                    <Navbar />
+                    <AdminPage />
+                  </AdminRoute>
+                </ProtectedRoute>
+              }
+            />
 
-        <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
+            <Route path="*" element={<Navigate to="/login" />} />
+
+          </Routes>
+        </Suspense>
+      </TransactionProvider>
     </AuthProvider>
   )
 }

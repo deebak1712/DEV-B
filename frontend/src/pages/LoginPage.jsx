@@ -7,7 +7,7 @@ function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -18,7 +18,7 @@ function LoginPage() {
     setError("")
 
     try {
-      const data = await loginApi({ email, password })
+      const data = await loginApi({ username, password })
       login(data)
       navigate("/dashboard")
     } catch (err) {
@@ -47,14 +47,14 @@ function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-[#111827] mb-2">
-              Email address
+              Name
             </label>
             <input
-              type="email"
+              type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@company.com"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Your full name"
               className="w-full px-4 py-3.5 bg-[#F8F9FB] border border-[#E5E7EB] rounded-xl text-[#111827] placeholder-[#9CA3AF] hover:border-[#D1D5DB] focus:border-[#2563EB]"
             />
           </div>
@@ -84,6 +84,17 @@ function LoginPage() {
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
+          <div className="text-center mt-6">
+            <p className="text-sm text-[#6B7280]">
+              Don’t have an account?{" "}
+              <span
+                onClick={() => navigate("/register")}
+                className="text-[#2563EB] font-medium cursor-pointer hover:underline"
+              >
+                Create account
+              </span>
+            </p>
+          </div>
         </form>
       </div>
     </div>

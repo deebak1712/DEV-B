@@ -35,11 +35,11 @@ def behaviour_risk(data):
     score = 0
     reasons = []
 
-    if data["device"] == "new":
+    if data["device"].lower() == "new":
         score += 10
         reasons.append("Behaviour deviation: new device")
 
-    if data["time"] < "05:00":
+    if "00:00" <= data["time"] <= "05:00":
         score += 10
         reasons.append("Behaviour deviation: unusual transaction time")
 

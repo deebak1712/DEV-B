@@ -1,27 +1,74 @@
-import { useEffect, useState } from "react"
-import { getAnalyticsApi } from "../api/fraudApi"
-import KPIcard from "../components/dashboard/KPIcard"
-import FraudTrendChart from "../components/dashboard/FraudTrendChart"
-import RiskPieChart from "../components/dashboard/RiskPieChart"
-import RecentActivity from "../components/dashboard/RecentActivity"
+import { Line, Doughnut } from "react-chartjs-2"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js"
+
+import { useTransactions } from "../context/TransactionContext"
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler
+)
 
 function DashboardPage() {
-  const [data, setData] = useState(null)
+  const { transactions } = useTransactions()
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await getAnalyticsApi()
-        setData(res)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    fetchData()
-  }, [])
+  const total = transactions.length
+  const approved = transactions.filter(t => t.decision === "APPROVE").length
+  const blocked = transactions.filter(t => t.decision === "BLOCK").length
+  const otp = transactions.filter(t => t.decision === "OTP_REQUIRED").length
+
+  const lineData = {
+    labels: transactions.map((_, i) => `T${i + 1}`),
+    datasets: [
+      {
+        label: "Risk Score",
+        data: transactions.map(t => t.final_risk_score),
+        borderColor: "#2563EB",
+        backgroundColor: "rgba(37,99,235,0.1)",
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2,
+      },
+      {
+        label: "High Risk Threshold",
+        data: transactions.map(() => 70),
+        borderColor: "#EF4444",
+        borderDash: [6, 6],
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+      },
+    ],
+  }
+
+  const pieData = {
+    labels: ["Approved", "OTP Required", "Blocked"],
+    datasets: [
+      {
+        data: [approved, otp, blocked],
+        backgroundColor: ["#22C55E", "#F59E0B", "#EF4444"],
+        borderWidth: 0,
+      },
+    ],
+  }
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full bg-[#F8F9FB] min-h-screen">
+    <div className="p-8 max-w-7xl mx-auto w-full">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-[#111827]">Dashboard</h1>
         <p className="text-[#6B7280] mt-1">
@@ -29,48 +76,147 @@ function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <KPIcard
-          title="Total Transactions"
-          value={data?.total_transactions || 0}
-          color="blue"
-          svg={<svg class="w-6 h-6 text-[#2563EB]/80" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
-        />
-        <KPIcard
-          title="Fraud Detected"
-          value={data?.fraud_detected || 0}
-          color="red"
-          svg={<svg class="w-6 h-6 text-[#EF4444]/80" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
-        />
-        <KPIcard
-          title="Medium Risk"
-          value={data?.medium_risk || 0}
-          color="yellow"
-          svg={<svg class="w-6 h-6 text-[#F59E0B]/80" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-        />
-        <KPIcard
-          title="Fraud Rate"
-          value={`${data?.fraud_rate || 0}%`}
-          color="green"
-          svg={<svg class="w-6 h-6 text-[#22C55E]/80" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-        />
+      {/* KPI CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <Card title="Total Transactions" value={total} />
+        <Card title="Approved" value={approved} />
+        <Card title="Blocked" value={blocked} />
+        <Card title="OTP Required" value={otp} />
       </div>
 
-      <div className="bg-white border border-black rounded-2xl p-6 shadow mb-6">
-        <FraudTrendChart trendData={data?.trend || []} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
         <div className="bg-white border border-black rounded-2xl p-6 shadow">
-          <RiskPieChart riskData={data?.risk_distribution || []} />
+          <h2 className="text-lg font-semibold mb-4">
+            Risk Trend
+          </h2>
+          {transactions.length === 0 ? (
+            <EmptyState message="No transaction data yet" />
+          ) : (
+            <Line data={lineData} options={{
+              maintainAspectRatio: false,
+              responsive: true,
+              animation: {
+                duration: 1200,
+                easing: "easeOutQuart",
+              },
+              transitions: {
+                show: {
+                  animations: {
+                    x: { from: 0 },
+                    y: { from: 0 },
+                  },
+                },
+              },
+              plugins: {
+                legend: { position: "top", align: "end" },
+              },
+              scales: {
+                y: {
+                  min: 0,
+                  max: 100,
+                },
+              },
+            }} />
+          )}
         </div>
 
         <div className="bg-white border border-black rounded-2xl p-6 shadow">
-          <RecentActivity activity={data?.recent_activity || []} />
+          <h2 className="text-lg font-semibold mb-4">
+            Decision Distribution
+          </h2>
+          {transactions.length === 0 ? (
+            <EmptyState message="No transaction data yet" />
+          ) : (
+            <Doughnut data={pieData} options={{
+              maintainAspectRatio: false,
+              responsive: true,
+              animation: {
+                animateRotate: true,
+                duration: 1000,
+                easing: "easeOutQuart",
+              },
+              plugins: {
+                legend: { position: "top", align: "end" },
+              },
+            }} />
+          )}
+        </div>
+      </div>
+
+      {/* RECENT ACTIVITY */}
+      <div className="bg-white border border-black rounded-2xl p-6 shadow">
+        <h2 className="text-lg font-semibold mb-4">
+          Recent Activity
+        </h2>
+
+        {transactions.length === 0 && (
+          <p className="text-sm text-[#6B7280]">
+            No transactions yet
+          </p>
+        )}
+
+        <div className="space-y-4">
+          {transactions.slice(0, 5).map((t, index) => (
+            <div
+              key={index}
+              className="flex justify-between items-center border border-gray-100 p-3 rounded-xl"
+            >
+              <span className="text-sm text-[#111827]">
+                Risk: {t.final_risk_score}
+              </span>
+
+              <span
+                className={`text-sm font-medium ${t.decision === "BLOCK"
+                  ? "text-[#EF4444]"
+                  : t.decision === "OTP_REQUIRED"
+                    ? "text-[#F59E0B]"
+                    : "text-[#22C55E]"
+                  }`}
+              >
+                {t.decision}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   )
 }
 
+function Card({ title, value }) {
+  return (
+    <div className="bg-white border border-black rounded-2xl p-6 shadow">
+      <p className="text-sm text-[#6B7280] mb-2">{title}</p>
+      <p className="text-3xl font-bold text-[#111827]">{value}</p>
+    </div>
+  )
+}
+
 export default DashboardPage
+
+function EmptyState({ message }) {
+  return (
+    <div className="h-64 flex flex-col items-center justify-center text-center">
+      <div className="w-16 h-16 bg-[#EEF2FF] rounded-2xl flex items-center justify-center mb-4">
+        <svg
+          className="w-7 h-7 text-[#2563EB]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.5"
+            d="M4 19V5m4 14V9m4 10V13m4 6V7"
+          />
+        </svg>
+      </div>
+
+      <p className="text-sm text-[#6B7280]">
+        {message}
+      </p>
+    </div>
+  )
+}

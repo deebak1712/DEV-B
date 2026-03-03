@@ -1,34 +1,29 @@
 import random
+import time
 
-# ----------------------
-# In-memory OTP store (demo only)
-# ----------------------
-otp_store = {}  # key = user_id, value = otp
+otp_store = {}
 
-# ----------------------
-# Generate OTP
-# ----------------------
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-# ----------------------
-# Save OTP for user_id
-# ----------------------
 def save_otp(user_id, otp):
-    otp_store[user_id] = otp
+    otp_store[user_id] = {
+        "otp": otp,
+        "expires": time.time() + 300
+    }
 
-# ----------------------
-# Verify OTP
-# ----------------------
 def verify_otp(user_id, otp):
-    if otp_store.get(user_id) == otp:
-        del otp_store[user_id]  # OTP used, remove it
+    record = otp_store.get(user_id)
+
+    if not record:
+        return False
+
+    if time.time() > record["expires"]:
+        del otp_store[user_id]
+        return False
+
+    if record["otp"] == otp:
+        del otp_store[user_id]
         return True
+
     return False
-# ----------------------
-# Send OTP (wrapper function)
-# ----------------------
-def send_otp(user_id):
-    otp = generate_otp()
-    save_otp(user_id, otp)
-    print(f"OTP for {user_id} is {otp}")  # demo purpose

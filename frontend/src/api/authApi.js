@@ -1,49 +1,22 @@
-import axiosInstance from "./axiosInstance"
+import axios from "axios"
 
-const delay = (ms) => new Promise((res) => setTimeout(res, ms))
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
 
-const defaultEmail = "admin@fraudshield.com"
-const defaultPassword = "admin123"
-
-export const loginApi = async ({ email, password }) => {
-  await delay(500)
-
-  if (email === defaultEmail && password === defaultPassword) {
-    return {
-      token: "mock-jwt-token-123",
-      email,
-      role: "admin",
-      mode: "demo"
-    }
-  }
-
-  try {
-    const response = await axiosInstance.post("/auth/login", {
-      email,
-      password
-    })
-
-    return {
-      ...response.data,
-      mode: "backend"
-    }
-
-  } catch (error) {
-    throw new Error("Invalid credentials")
-  }
+export const registerApi = async (data) => {
+  const response = await axios.post(`${API_BASE}/register`, data)
+  return response.data
 }
 
-export const verifyOtpApi = async ({ otp }) => {
-  await delay(300)
+export const loginApi = async ({ username, password }) => {
+  const formData = new URLSearchParams()
+  formData.append("username", username)
+  formData.append("password", password)
 
-  if (otp === "123456") {
-    return { success: true, mode: "demo" }
-  }
+  const response = await axios.post(`${API_BASE}/login`, formData, {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  })
 
-  try {
-    const response = await axiosInstance.post("/auth/otp", { otp })
-    return response.data
-  } catch (error) {
-    throw new Error("Invalid OTP")
-  }
+  return response.data
 }
